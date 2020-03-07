@@ -1,4 +1,4 @@
-#DEFINE N 10
+#define N 10
 
 active proctype ARRAY() {
         int a[N];
