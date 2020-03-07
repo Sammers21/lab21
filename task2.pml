@@ -18,6 +18,7 @@ active proctype ARRAY() {
         int y = 0;
         do
                 :: (y>=N) -> break
-                :: else -> printf("%d\n", a[y]) -> y=y+1
+                :: else -> printf("a[%d]=%d\n", y, a[y]) -> y=y+1
         od;
+        
 }
