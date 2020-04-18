@@ -27,6 +27,7 @@ proctype node(chan prev, next; byte my_id)
                 :: in_id < my_id ->
                     skip;
                 :: else ->
+elected:
                     num_leaders++;
                     printf("I am the leader! (pid: %d, id: %d)\n", _pid, my_id);
                     next!leader(my_id);
@@ -68,3 +69,11 @@ init {
         od
     }
 }
+
+ltl p1 { <> (num_leaders != 0) };  
+ltl p2 { [] (num_leaders <= 1) };
+ltl p3 { [] ( ((node[1]@elected) -> [] (node[1]@elected)) ||
+              ((node[2]@elected) -> [] (node[2]@elected)) ||
+              ((node[3]@elected) -> [] (node[3]@elected)) ||
+              ((node[4]@elected) -> [] (node[4]@elected)) ||
+              ((node[5]@elected) -> [] (node[5]@elected)) )}; 
