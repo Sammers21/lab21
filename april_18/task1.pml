@@ -36,4 +36,4 @@ active proctype Reviewer(){
     od
 }
 
-ltl p1 { [] (tearminate = false) };
+ltl p1 { [] (tearminate == false) };

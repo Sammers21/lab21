@@ -11,7 +11,7 @@ active proctype stuck() {
     od
 }
 
-ltl p1 { [] ((sum != 0) -> <> (sum == 0)) };
+ltl p1 { []<> (sum == 0) };
 ltl p2 { [] ((sum <= 3) && (sum >= -3)) };
 ltl p3 { [] (((sum > 0) -> <> (sum < 0)) && ((sum < 0) -> <> (sum > 0))) };
 ltl p3_fixed { [] (((sum > 0) -> <> (sum <= 0)) && ((sum <= 0) -> <> (sum > 0))) };
