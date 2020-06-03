@@ -1,7 +1,7 @@
 // true - green, false - red
-bool trafic_lights [5] = {false, true, false, false, false};
+bool trafic_lights [5] = {true, false, false, false, false};
 // true - movement requested, false - none
-bool requested_senses [5] = {true, false, false, false, false}; 
+bool requested_senses [5] = {true, true, false, false, false}; 
 
 byte BLACK = 0;
 byte RED = 1;
@@ -17,16 +17,18 @@ proctype black_tl(byte id) {
     if
         :: requested_senses[id] ->
             if 
-                :: trafic_lights[id] -> requested_senses[id] = false -> printf("BLA: Машина проехала сразу\n");
+                :: trafic_lights[id] -> requested_senses[id] = false -> printf("BLA: Машина проехала сразу\n") -> trafic_lights[id] = false;
                 :: !trafic_lights[id] -> 
-                    atomic {
-                        if
-                            :: trafic_lights[RED] -> printf("BLA: RED был зеленым\n") -> skip
-                            :: !trafic_lights[RED] ->
-                                trafic_lights[id] = true -> printf("BLA: Машина есть - зеленый\n")
-                                requested_senses[id] = false -> printf("BLA: Машина проехала\n");                                
-                        fi;
-                    }
+                    :: trafic_lights[RED] -> printf("BLA: RED был зеленым\n") ->  
+                        do
+                            :: trafic_lights[BLACK] -> skip;
+                            :: !trafic_lights[BLACK] -> printf("BLA: RED стал красным\n") -> break;
+                        od;
+                    :: !trafic_lights[RED] ->
+                        atomic {
+                            trafic_lights[id] = true -> printf("BLA: Машина есть - зеленый\n")
+                            requested_senses[id] = false -> printf("BLA: Машина проехала\n") -> trafic_lights[id] = false;                                
+                        }
             fi;
         :: !requested_senses[id] ->
             atomic {
@@ -43,16 +45,18 @@ proctype red_tl(byte id) {
     if
         :: requested_senses[id] ->
             if 
-                :: trafic_lights[id] -> requested_senses[id] = false -> printf("RED: Машина проехала сразу\n");
-                :: !trafic_lights[id] ->
-                    atomic {    
-                        if
-                            :: trafic_lights[BLACK] -> printf("RED: BLA был зеленым\n") -> skip
-                            :: !trafic_lights[BLACK] ->
-                                trafic_lights[id] = true -> printf("RED: Машина есть - зеленый\n")
-                                requested_senses[id] = false -> printf("RED: Машина проехала\n");
-                        fi;
-                    }
+                :: trafic_lights[id] -> requested_senses[id] = false -> printf("RED: Машина проехала сразу\n") -> trafic_lights[id] = false;
+                :: !trafic_lights[id] ->  
+                    :: trafic_lights[BLACK] -> printf("RED: BLA был зеленым\n") -> 
+                        do
+                            :: trafic_lights[BLACK] -> skip;
+                            :: !trafic_lights[BLACK] -> printf("RED: BLA стал красным\n") -> break;
+                        od;
+                    :: !trafic_lights[BLACK] ->
+                        atomic {
+                            trafic_lights[id] = true -> printf("RED: Машина есть - зеленый\n")
+                            requested_senses[id] = false -> printf("RED: Машина проехала\n") -> trafic_lights[id] = false;
+                        }
             fi;
         :: !requested_senses[id] ->
             atomic {
