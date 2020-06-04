@@ -1,3 +1,5 @@
+// colors
+mtype = { red, green }
 
 typedef CrossRoadr {
     // is it locked or not
@@ -15,6 +17,7 @@ typedef CrossRoadr {
 CrossRoadr all_crosses[6];
 
 typedef Lane {
+    mtype color = red;
     // indexes from all_crosses
     int crosses[3];
     // lenght of crosses array
@@ -61,6 +64,7 @@ proctype LaneController(int lane_numb) {
     :: (nempty(lanes[lane_numb].signals)) ->
             int attempt = 0; 
             lanes[lane_numb].signals?signal
+            signal_received: 
             printf("\n[Controller №%d]: received a signal, trying to aquire all the resources", lane_numb);
             do
             ::  
@@ -90,6 +94,8 @@ proctype LaneController(int lane_numb) {
                         printf("\n[Controller №%d]: cross №:%d has been aquired", lane_numb, cross);
                     }
                     aquired = true
+                    green_turned:            
+                    lanes[lane_numb].color = green
                     :: else ->
                     printf("\n[Controller №%d]: could not aquire", lane_numb)
                     aquired = false
@@ -105,7 +111,8 @@ proctype LaneController(int lane_numb) {
                             cross = lanes[lane_numb].crosses[idx];
                             all_crosses[cross].locked = false
                             printf("\n[Controller №%d]: cross №:%d has been released", lane_numb, cross);
-                        }                       
+                        }
+                    lanes[lane_numb].color = red                           
                     UNLOCK_REQUEST ! lane_numb
                     UNLOCKED_BY_LANE[lane_numb]?signal
                     break;
@@ -164,7 +171,16 @@ init {
     run LaneController(4);
     // trafic generation
     run car(1)
-    run car(2)
-    run car(3)
-    run car(4)
 }
+
+
+ltl safety { 
+    [] !((lanes[0].color == green) && (lanes[2].color == green)) && // red and black
+       !((lanes[0].color == green) && (lanes[1].color == green)) && // red and green
+       !((lanes[0].color == green) && (lanes[4].color == green)) && // red and blue
+       !((lanes[4].color == green) && (lanes[3].color == green)) && // blue and purle
+       !((lanes[4].color == green) && (lanes[1].color == green)) && // blue and green
+       !((lanes[3].color == green) && (lanes[1].color == green)) // purle and green
+};
+
+ltl liveness { [] (LaneController@signal_received -> <> LaneController@green_turned) };
