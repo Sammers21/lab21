@@ -1,9 +1,9 @@
 
 typedef CrossRoadr {
     // is it locked or not
-    // 0 - not locked
-    // 1 - locked
-    byte locked = 0;
+    // false - not locked
+    // true - locked
+    bool locked = 0;
 };
 
 // 0 - red cross back
@@ -34,9 +34,69 @@ proctype LaneController(int lane_numb) {
     byte signal;
     printf("\nController on lane №%d has been started. Crossroads count:%d", lane_numb, lanes[lane_numb].crosses_len);
     do
-    :: nempty(lanes[lane_numb].sygnals) -> 
-        lanes[lane_numb].sygnals?signal;
-        printf("\n[Controller №%d]: received a signal", lane_numb);
+    :: (nempty(lanes[lane_numb].sygnals)) ->
+            int attempt = 0; 
+            lanes[lane_numb].sygnals?signal
+            printf("\n[Controller №%d]: received a signal, trying to aquire all the resources", lane_numb);
+            do
+            ::  
+                attempt = attempt + 1;
+                printf("\n[Controller №%d]: attempt to aquire №%d", lane_numb, attempt);
+                bool aquired;
+                bool can_aquire = true;
+                int idx;
+                int cross;
+                atomic {
+                    // check if can aquire
+                    idx = 0;
+                    do
+                    :: (idx < lanes[lane_numb].crosses_len) ->
+                    cross = lanes[lane_numb].crosses[idx];
+                    if
+                    :: (all_crosses[cross].locked) -> can_aquire = false -> skip;
+                    :: else -> skip;
+                    fi
+                    idx = idx + 1;
+                    :: else -> 
+                    break;
+                    od
+                    // aquire if can
+                    idx = 0;
+                    if
+                    :: can_aquire -> 
+                    printf("\n[Controller №%d]: can aquire", lane_numb)
+                    do
+                    :: (idx < lanes[lane_numb].crosses_len) ->
+                        cross = lanes[lane_numb].crosses[idx];
+                        all_crosses[cross].locked = true
+                        printf("\n[Controller №%d]: cross №:%d has been aquired", lane_numb, cross);
+                        idx = idx + 1;
+                    :: else -> break;
+                    od
+                    aquired = true
+                    :: else ->
+                    printf("\n[Controller №%d]: could not aquire", lane_numb)
+                    aquired = false
+                    fi
+                }
+                if
+                :: aquired ->
+                    idx = 0;
+                    atomic {
+                        printf("\n[Controller №%d]: releasing locks", lane_numb)
+                        do
+                        :: (idx < lanes[lane_numb].crosses_len) ->
+                        cross = lanes[lane_numb].crosses[idx];
+                        all_crosses[cross].locked = false
+                        printf("\n[Controller №%d]: cross №:%d has been released", lane_numb, cross);
+                        idx = idx + 1;
+                        :: else -> break;
+                        od
+                    }
+                    break;
+                :: else -> printf("\n[Controller №%d]: attempt to aquire one more time", lane_numb)
+                fi
+            od
     :: else -> skip
     od
 }
@@ -72,5 +132,10 @@ init {
     run LaneController(3);
     run LaneController(4);
     
+    // Simple traffic
+    lanes[0].sygnals ! 1;
+    lanes[1].sygnals ! 1;
     lanes[2].sygnals ! 1;
+    lanes[3].sygnals ! 1;
+    lanes[4].sygnals ! 1;
 }
