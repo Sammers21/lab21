@@ -154,7 +154,6 @@ init {
     lanes[4].crosses[0] = 3;
     lanes[4].crosses[1] = 4;
     lanes[4].crosses[2] = 5
-    
     //run lock manager
     run LockManager()
     // start controllers
