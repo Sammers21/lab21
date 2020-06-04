@@ -48,31 +48,22 @@ proctype LaneController(int lane_numb) {
                 int cross;
                 atomic {
                     // check if can aquire
-                    idx = 0;
-                    do
-                    :: (idx < lanes[lane_numb].crosses_len) ->
-                    cross = lanes[lane_numb].crosses[idx];
-                    if
-                    :: (all_crosses[cross].locked) -> can_aquire = false -> skip;
-                    :: else -> skip;
-                    fi
-                    idx = idx + 1;
-                    :: else -> 
-                    break;
-                    od
+                    for(idx: 0 .. lanes[lane_numb].crosses_len - 1){
+                        cross = lanes[lane_numb].crosses[idx];
+                        if
+                        :: (all_crosses[cross].locked) -> can_aquire = false -> skip;
+                        :: else -> skip;
+                        fi
+                    }
                     // aquire if can
-                    idx = 0;
                     if
                     :: can_aquire -> 
                     printf("\n[Controller №%d]: can aquire", lane_numb)
-                    do
-                    :: (idx < lanes[lane_numb].crosses_len) ->
+                    for(idx: 0 .. lanes[lane_numb].crosses_len - 1){
                         cross = lanes[lane_numb].crosses[idx];
                         all_crosses[cross].locked = true
                         printf("\n[Controller №%d]: cross №:%d has been aquired", lane_numb, cross);
-                        idx = idx + 1;
-                    :: else -> break;
-                    od
+                    }
                     aquired = true
                     :: else ->
                     printf("\n[Controller №%d]: could not aquire", lane_numb)
@@ -81,17 +72,13 @@ proctype LaneController(int lane_numb) {
                 }
                 if
                 :: aquired ->
-                    idx = 0;
                     atomic {
                         printf("\n[Controller №%d]: releasing locks", lane_numb)
-                        do
-                        :: (idx < lanes[lane_numb].crosses_len) ->
-                        cross = lanes[lane_numb].crosses[idx];
-                        all_crosses[cross].locked = false
-                        printf("\n[Controller №%d]: cross №:%d has been released", lane_numb, cross);
-                        idx = idx + 1;
-                        :: else -> break;
-                        od
+                        for(idx: 0 .. lanes[lane_numb].crosses_len - 1){
+                            cross = lanes[lane_numb].crosses[idx];
+                            all_crosses[cross].locked = false
+                            printf("\n[Controller №%d]: cross №:%d has been released", lane_numb, cross);
+                        }                       
                     }
                     break;
                 :: else -> printf("\n[Controller №%d]: attempt to aquire one more time", lane_numb)
