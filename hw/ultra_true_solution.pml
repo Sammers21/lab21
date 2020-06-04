@@ -101,6 +101,21 @@ proctype LaneController(int lane_numb) {
     od
 }
 
+
+proctype car(int car_num){
+    byte lane_to_move_on;
+    do
+    :: 
+        select (lane_to_move_on : 0 .. 4)
+        if
+        :: (len(lanes[lane_to_move_on].sygnals) == 0) ->
+           printf("\n[Car №%d]: moving on lane №%d", car_num, lane_to_move_on)
+           lanes[lane_to_move_on].sygnals ! 1
+        :: else -> skip
+        fi
+    od
+}
+
 init {
     // red configuration
     lanes[0].crosses_len = 3;
@@ -132,10 +147,8 @@ init {
     run LaneController(3);
     run LaneController(4);
     
-    // Simple traffic
-    lanes[0].sygnals ! 1;
-    lanes[1].sygnals ! 1;
-    lanes[2].sygnals ! 1;
-    lanes[3].sygnals ! 1;
-    lanes[4].sygnals ! 1;
+    run car(1)
+    run car(2)
+    run car(3)
+    run car(4)
 }
