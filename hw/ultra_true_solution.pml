@@ -20,7 +20,7 @@ typedef Lane {
     // lenght of crosses array
     int crosses_len = 0;
     // channel for signals
-    chan sygnals = [1] of {byte};
+    chan signals = [1] of {byte};
 };
 
 // 0 - red
@@ -44,13 +44,13 @@ proctype LockManager(){
     ::
         byte who_requested;
         LOCK_REQUEST ? who_requested;
-        printf("\n[LockManager]: LaneController№%d has requested a lock", who_requested);
+        // printf("\n[LockManager]: LaneController№%d has requested a lock", who_requested);
         LOCKED_BY_LANE[who_requested] ! 1;
-        printf("\n[LockManager]: LaneController№%d permissinon has been granted", who_requested);
+        // printf("\n[LockManager]: LaneController№%d permissinon has been granted", who_requested);
         UNLOCK_REQUEST ? who_requested;
-        printf("\n[LockManager]: LaneController№%d has requested unlock", who_requested);
+        // printf("\n[LockManager]: LaneController№%d has requested unlock", who_requested);
         UNLOCKED_BY_LANE[who_requested] ! 1;
-        printf("\n[LockManager]: unlocked");
+        // printf("\n[LockManager]: unlocked");
     od
 }
 
@@ -58,9 +58,9 @@ proctype LaneController(int lane_numb) {
     byte signal;
     printf("\nController on lane №%d has been started. Crossroads count:%d", lane_numb, lanes[lane_numb].crosses_len);
     do
-    :: (nempty(lanes[lane_numb].sygnals)) ->
+    :: (nempty(lanes[lane_numb].signals)) ->
             int attempt = 0; 
-            lanes[lane_numb].sygnals?signal
+            lanes[lane_numb].signals?signal
             printf("\n[Controller №%d]: received a signal, trying to aquire all the resources", lane_numb);
             do
             ::  
@@ -123,9 +123,9 @@ proctype car(int car_num){
     :: 
         select (lane_to_move_on : 0 .. 4)
         if
-        :: (len(lanes[lane_to_move_on].sygnals) == 0) ->
+        :: (len(lanes[lane_to_move_on].signals) == 0) ->
            printf("\n[Car №%d]: moving on lane №%d", car_num, lane_to_move_on)
-           lanes[lane_to_move_on].sygnals ! 1
+           lanes[lane_to_move_on].signals ! 1
         :: else -> skip
         fi
     od
