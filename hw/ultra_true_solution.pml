@@ -63,8 +63,7 @@ proctype LaneController(int lane_numb) {
     do
     :: (nempty(lanes[lane_numb].signals)) ->
             int attempt = 0; 
-            lanes[lane_numb].signals?signal
-            signal_received: 
+             signal_received: lanes[lane_numb].signals?signal;
             printf("\n[Controller №%d]: received a signal, trying to aquire all the resources", lane_numb);
             do
             ::  
@@ -74,8 +73,8 @@ proctype LaneController(int lane_numb) {
                 bool can_aquire = true;
                 int idx;
                 int cross;
-                LOCK_REQUEST ! lane_numb
-                LOCKED_BY_LANE[lane_numb]?signal
+                LOCK_REQUEST ! lane_numb;
+                LOCKED_BY_LANE[lane_numb]?signal;
                     // check if can aquire
                     for(idx: 0 .. lanes[lane_numb].crosses_len - 1){
                         cross = lanes[lane_numb].crosses[idx];
@@ -87,55 +86,54 @@ proctype LaneController(int lane_numb) {
                     // aquire if can
                     if
                     :: can_aquire -> 
-                    printf("\n[Controller №%d]: can aquire", lane_numb)
+                    printf("\n[Controller №%d]: can aquire", lane_numb);
                     for(idx: 0 .. lanes[lane_numb].crosses_len - 1){
                         cross = lanes[lane_numb].crosses[idx];
-                        all_crosses[cross].locked = true
+                        all_crosses[cross].locked = true;
                         printf("\n[Controller №%d]: cross №:%d has been aquired", lane_numb, cross);
                     }
-                    aquired = true
+                    aquired = true;
                     green_turned:            
-                    lanes[lane_numb].color = green
+                    lanes[lane_numb].color = green;
                     :: else ->
-                    printf("\n[Controller №%d]: could not aquire", lane_numb)
-                    aquired = false
+                    printf("\n[Controller №%d]: could not aquire", lane_numb);
+                    aquired = false;
                     fi
-                UNLOCK_REQUEST ! lane_numb
-                UNLOCKED_BY_LANE[lane_numb]?signal
+                UNLOCK_REQUEST ! lane_numb;
+                UNLOCKED_BY_LANE[lane_numb]?signal;
                 if
                 :: aquired ->
-                    LOCK_REQUEST ! lane_numb
-                    LOCKED_BY_LANE[lane_numb]?signal
+                    LOCK_REQUEST ! lane_numb;
+                    LOCKED_BY_LANE[lane_numb]?signal;
                         printf("\n[Controller №%d]: releasing locks", lane_numb)
                         for(idx: 0 .. lanes[lane_numb].crosses_len - 1){
                             cross = lanes[lane_numb].crosses[idx];
-                            all_crosses[cross].locked = false
+                            all_crosses[cross].locked = false;
                             printf("\n[Controller №%d]: cross №:%d has been released", lane_numb, cross);
                         }
-                    lanes[lane_numb].color = red                           
-                    UNLOCK_REQUEST ! lane_numb
-                    UNLOCKED_BY_LANE[lane_numb]?signal
+                    lanes[lane_numb].color = red;             
+                    UNLOCK_REQUEST ! lane_numb;
+                    UNLOCKED_BY_LANE[lane_numb]?signal;
                     break;
-                :: else -> printf("\n[Controller №%d]: attempt to aquire one more time", lane_numb)
+                :: else -> printf("\n[Controller №%d]: attempt to aquire one more time", lane_numb);
                 fi
             od
-    :: else -> skip
     od
 }
 
 
 proctype car(int car_num){
     byte lane_to_move_on;
-    do
-    :: 
+    byte atmpt;
+    for(atmpt: 0 .. 100){
         select (lane_to_move_on : 0 .. 4)
         if
         :: (len(lanes[lane_to_move_on].signals) == 0) ->
-           printf("\n[Car №%d]: moving on lane №%d", car_num, lane_to_move_on)
-           lanes[lane_to_move_on].signals ! 1
-        :: else -> skip
-        fi
-    od
+           printf("\n[Car №%d]: moving on lane №%d", car_num, lane_to_move_on);
+           lanes[lane_to_move_on].signals ! 1;
+        :: else -> skip;
+        fi        
+    }
 }
 
 init {
