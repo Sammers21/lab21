@@ -30,6 +30,30 @@ typedef Lane {
 // 4 - blue
 Lane lanes[5];
 
+// LaneControllers send its number here
+chan LOCK_REQUEST = [1] of { byte }
+// LaneControllers receive permission here
+chan LOCKED_BY_LANE[5] = [1] of { byte }
+// LaneControllers send its number here
+chan UNLOCK_REQUEST = [1] of { byte }
+// LaneControllers receive permission here
+chan UNLOCKED_BY_LANE[5] = [1] of { byte }
+
+proctype LockManager(){
+    do 
+    ::
+        byte who_requested;
+        LOCK_REQUEST ? who_requested;
+        printf("\n[LockManager]: LaneController№%d has requested a lock", who_requested);
+        LOCKED_BY_LANE[who_requested] ! 1;
+        printf("\n[LockManager]: LaneController№%d permissinon has been granted", who_requested);
+        UNLOCK_REQUEST ? who_requested;
+        printf("\n[LockManager]: LaneController№%d has requested unlock", who_requested);
+        UNLOCKED_BY_LANE[who_requested] ! 1;
+        printf("\n[LockManager]: unlocked");
+    od
+}
+
 proctype LaneController(int lane_numb) {
     byte signal;
     printf("\nController on lane №%d has been started. Crossroads count:%d", lane_numb, lanes[lane_numb].crosses_len);
@@ -46,7 +70,8 @@ proctype LaneController(int lane_numb) {
                 bool can_aquire = true;
                 int idx;
                 int cross;
-                atomic {
+                LOCK_REQUEST ! lane_numb
+                LOCKED_BY_LANE[lane_numb]?signal
                     // check if can aquire
                     for(idx: 0 .. lanes[lane_numb].crosses_len - 1){
                         cross = lanes[lane_numb].crosses[idx];
@@ -69,17 +94,20 @@ proctype LaneController(int lane_numb) {
                     printf("\n[Controller №%d]: could not aquire", lane_numb)
                     aquired = false
                     fi
-                }
+                UNLOCK_REQUEST ! lane_numb
+                UNLOCKED_BY_LANE[lane_numb]?signal
                 if
                 :: aquired ->
-                    atomic {
+                    LOCK_REQUEST ! lane_numb
+                    LOCKED_BY_LANE[lane_numb]?signal
                         printf("\n[Controller №%d]: releasing locks", lane_numb)
                         for(idx: 0 .. lanes[lane_numb].crosses_len - 1){
                             cross = lanes[lane_numb].crosses[idx];
                             all_crosses[cross].locked = false
                             printf("\n[Controller №%d]: cross №:%d has been released", lane_numb, cross);
                         }                       
-                    }
+                    UNLOCK_REQUEST ! lane_numb
+                    UNLOCKED_BY_LANE[lane_numb]?signal
                     break;
                 :: else -> printf("\n[Controller №%d]: attempt to aquire one more time", lane_numb)
                 fi
@@ -127,13 +155,15 @@ init {
     lanes[4].crosses[1] = 4;
     lanes[4].crosses[2] = 5
     
+    //run lock manager
+    run LockManager()
     // start controllers
     run LaneController(0);
     run LaneController(1);
     run LaneController(2);
     run LaneController(3);
     run LaneController(4);
-    
+    // trafic generation
     run car(1)
     run car(2)
     run car(3)
