@@ -150,7 +150,7 @@ init {
     lanes[4].crosses[1] = 4;
     lanes[4].crosses[2] = 5
     //run lock manager
-    run LockManager()
+    run LockManager();
     // start controllers
     run LaneController(0);
     run LaneController(1);
@@ -158,8 +158,8 @@ init {
     run LaneController(3);
     run LaneController(4);
     // trafic generation
-    run car(0)
-    run car(1)
+    run car(0);
+    run car(1);
 }
 
 
@@ -173,5 +173,5 @@ ltl safety {
 };
 
 // #TODO ltl Сделать:
-// 1. Если он красный то станет зелетный
-// 2. Никакой из с не остается бесконечно зеленым
+// 1. Если он светофор красный то станет зеленым
+// 2. Никакой из сфетофоров не остается бесконечно зеленым
