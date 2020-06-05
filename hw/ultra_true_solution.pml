@@ -42,7 +42,7 @@ chan UNLOCK_REQUEST = [0] of { byte }
 // LaneControllers receive permission here
 chan UNLOCKED_BY_LANE[5] = [0] of { byte }
 
-proctype LockManager(){
+proctype LockManager() {
     do 
     ::
         byte who_requested;
@@ -72,7 +72,7 @@ proctype LaneController(int lane_numb) {
                 LOCK_REQUEST!lane_numb;
                 LOCKED_BY_LANE[lane_numb]?_;
                     // check if can aquire
-                    for(idx: 0 .. lanes[lane_numb].crosses_len - 1){
+                    for(idx: 0 .. lanes[lane_numb].crosses_len - 1) {
                         cross = lanes[lane_numb].crosses[idx];
                         if
                         :: (all_crosses[cross].locked) -> can_aquire = false -> skip;
@@ -83,7 +83,7 @@ proctype LaneController(int lane_numb) {
                     if
                     :: can_aquire -> 
                         printf("\n[Controller №%d]: can aquire", lane_numb);
-                        for(idx: 0 .. lanes[lane_numb].crosses_len - 1){
+                        for(idx: 0 .. lanes[lane_numb].crosses_len - 1) {
                             cross = lanes[lane_numb].crosses[idx];
                             all_crosses[cross].locked = true;
                             printf("\n[Controller №%d]: cross №:%d has been aquired", lane_numb, cross);
@@ -101,7 +101,7 @@ proctype LaneController(int lane_numb) {
                     LOCK_REQUEST!lane_numb;
                     LOCKED_BY_LANE[lane_numb]?_;
                         printf("\n[Controller №%d]: releasing locks", lane_numb)
-                        for(idx: 0 .. lanes[lane_numb].crosses_len - 1){
+                        for(idx: 0 .. lanes[lane_numb].crosses_len - 1) {
                             cross = lanes[lane_numb].crosses[idx];
                             all_crosses[cross].locked = false;
                             printf("\n[Controller №%d]: cross №:%d has been released", lane_numb, cross);
@@ -117,7 +117,7 @@ proctype LaneController(int lane_numb) {
 }
 
 
-proctype car(int car_num){
+proctype car(int car_num) {
     byte i;
     byte rnd;
     do
@@ -170,6 +170,14 @@ ltl safety {
        !((lanes[4].color == green) && (lanes[3].color == green)) && // blue and purle
        !((lanes[4].color == green) && (lanes[1].color == green)) && // blue and green
        !((lanes[3].color == green) && (lanes[1].color == green))) // purle and green
+};
+
+ltl liveness {
+    [] (((len(lanes[0].signals) > 0) -> <> (lanes[0].color == green)) &&
+        ((len(lanes[1].signals) > 0) -> <> (lanes[1].color == green)) &&
+        ((len(lanes[2].signals) > 0) -> <> (lanes[2].color == green)) &&
+        ((len(lanes[3].signals) > 0) -> <> (lanes[3].color == green)) &&
+        ((len(lanes[4].signals) > 0) -> <> (lanes[4].color == green)))
 };
 
 // #TODO ltl Сделать:
