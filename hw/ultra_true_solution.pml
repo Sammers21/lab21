@@ -41,21 +41,15 @@ chan LOCKED_BY_LANE[5] = [0] of { byte }
 chan UNLOCK_REQUEST = [0] of { byte }
 // LaneControllers receive permission here
 chan UNLOCKED_BY_LANE[5] = [0] of { byte }
-// Lane movement permissions
-chan MOVE_PERMISSIONS[5] = [0] of { byte }
 
 proctype LockManager(){
     do 
     ::
         byte who_requested;
         LOCK_REQUEST ? who_requested;
-        // printf("\n[LockManager]: LaneController№%d has requested a lock", who_requested);
         LOCKED_BY_LANE[who_requested] ! 1;
-        // printf("\n[LockManager]: LaneController№%d permissinon has been granted", who_requested);
         UNLOCK_REQUEST ? who_requested;
-        // printf("\n[LockManager]: LaneController№%d has requested unlock", who_requested);
         UNLOCKED_BY_LANE[who_requested] ! 1;
-        // printf("\n[LockManager]: unlocked");
     od
 }
 
@@ -178,11 +172,6 @@ ltl safety {
        !((lanes[3].color == green) && (lanes[1].color == green))) // purle and green
 };
 
-// Всегда 
-ltl liveness { 
-    [] <> (lanes[0].color == green 
-        || lanes[1].color == green 
-        || lanes[2].color == green 
-        || lanes[3].color == green 
-        || lanes[4].color == green)
- };
+// #TODO ltl Сделать:
+// 1. Если он красный то станет зелетный
+// 2. Никакой из с не остается бесконечно зеленым
