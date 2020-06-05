@@ -1,20 +1,12 @@
 // colors
 mtype = { red, green }
 
-typedef CrossRoadr {
+typedef CrossRoad {
     // is it locked or not
     // false - not locked
     // true - locked
     bool locked = 0;
 };
-
-// 0 - red cross back
-// 1 - green cross red
-// 2 - purple cross green
-// 3 - blue cross red
-// 4 - blue cross green
-// 5 - blue cross purple
-CrossRoadr all_crosses[6];
 
 typedef Lane {
     mtype color = red;
@@ -27,6 +19,14 @@ typedef Lane {
 
     bool s_received;
 };
+
+// 0 - red cross back
+// 1 - green cross red
+// 2 - purple cross green
+// 3 - blue cross red
+// 4 - blue cross green
+// 5 - blue cross purple
+CrossRoad all_crosses[6];
 
 // 0 - red
 // 1 - green
@@ -62,44 +62,44 @@ proctype LaneController(int lane_numb) {
     ::
             int attempt = 0; 
             signal_received: lanes[lane_numb].signals?_ -> lanes[lane_numb].s_received = true -> lanes[lane_numb].s_received = false;
-            printf("\n[Controller №%d]: received a signal, trying to aquire all the resources", lane_numb);
+            printf("\n[Controller №%d]: received a signal, trying to acquire all the resources", lane_numb);
             do
             ::  
                 attempt = attempt + 1;
-                printf("\n[Controller №%d]: attempt to aquire №%d", lane_numb, attempt);
-                bool aquired;
-                bool can_aquire = true;
+                printf("\n[Controller №%d]: attempt to acquire №%d", lane_numb, attempt);
+                bool acquired;
+                bool can_acquire = true;
                 int idx;
                 int cross;
                 LOCK_REQUEST!lane_numb;
                 LOCKED_BY_LANE[lane_numb]?_;
-                    // check if can aquire
+                    // check if can acquire
                     for(idx: 0 .. lanes[lane_numb].crosses_len - 1) {
                         cross = lanes[lane_numb].crosses[idx];
                         if
-                        :: (all_crosses[cross].locked) -> can_aquire = false -> skip;
+                        :: (all_crosses[cross].locked) -> can_acquire = false -> skip;
                         :: else -> skip;
                         fi
                     }
-                    // aquire if can
+                    // acquire if can
                     if
-                    :: can_aquire -> 
-                        printf("\n[Controller №%d]: can aquire", lane_numb);
+                    :: can_acquire -> 
+                        printf("\n[Controller №%d]: can acquire", lane_numb);
                         for(idx: 0 .. lanes[lane_numb].crosses_len - 1) {
                             cross = lanes[lane_numb].crosses[idx];
                             all_crosses[cross].locked = true;
-                            printf("\n[Controller №%d]: cross №:%d has been aquired", lane_numb, cross);
+                            printf("\n[Controller №%d]: cross №:%d has been acquired", lane_numb, cross);
                         }
-                        aquired = true;
+                        acquired = true;
                         green_turned: lanes[lane_numb].color = green;
                     :: else ->
-                        printf("\n[Controller №%d]: could not aquire", lane_numb);
-                        aquired = false;
+                        printf("\n[Controller №%d]: could not acquire", lane_numb);
+                        acquired = false;
                     fi
                 UNLOCK_REQUEST!lane_numb;
                 UNLOCKED_BY_LANE[lane_numb]?signal;
                 if
-                :: aquired ->
+                :: acquired ->
                     LOCK_REQUEST!lane_numb;
                     LOCKED_BY_LANE[lane_numb]?_;
                         printf("\n[Controller №%d]: releasing locks", lane_numb)
@@ -112,7 +112,7 @@ proctype LaneController(int lane_numb) {
                     UNLOCK_REQUEST!lane_numb;
                     UNLOCKED_BY_LANE[lane_numb]?_;
                     break;
-                :: else -> printf("\n[Controller №%d]: attempt to aquire one more time", lane_numb);
+                :: else -> printf("\n[Controller №%d]: attempt to acquire one more time", lane_numb);
                 fi
             od
     od
