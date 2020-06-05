@@ -65,7 +65,7 @@ proctype LaneController(int lane_numb) {
     do
     ::
             int attempt = 0; 
-            signal_received: lanes[lane_numb].signals?signal;
+            signal_received: lanes[lane_numb].signals?_;
             printf("\n[Controller №%d]: received a signal, trying to aquire all the resources", lane_numb);
             do
             ::  
@@ -88,18 +88,17 @@ proctype LaneController(int lane_numb) {
                     // aquire if can
                     if
                     :: can_aquire -> 
-                    printf("\n[Controller №%d]: can aquire", lane_numb);
-                    for(idx: 0 .. lanes[lane_numb].crosses_len - 1){
-                        cross = lanes[lane_numb].crosses[idx];
-                        all_crosses[cross].locked = true;
-                        printf("\n[Controller №%d]: cross №:%d has been aquired", lane_numb, cross);
-                    }
-                    aquired = true;
-                    green_turned:            
-                    lanes[lane_numb].color = green;
+                        printf("\n[Controller №%d]: can aquire", lane_numb);
+                        for(idx: 0 .. lanes[lane_numb].crosses_len - 1){
+                            cross = lanes[lane_numb].crosses[idx];
+                            all_crosses[cross].locked = true;
+                            printf("\n[Controller №%d]: cross №:%d has been aquired", lane_numb, cross);
+                        }
+                        aquired = true;
+                        green_turned: lanes[lane_numb].color = green;
                     :: else ->
-                    printf("\n[Controller №%d]: could not aquire", lane_numb);
-                    aquired = false;
+                        printf("\n[Controller №%d]: could not aquire", lane_numb);
+                        aquired = false;
                     fi
                 UNLOCK_REQUEST!lane_numb;
                 UNLOCKED_BY_LANE[lane_numb]?signal;
@@ -179,4 +178,11 @@ ltl safety {
        !((lanes[3].color == green) && (lanes[1].color == green))) // purle and green
 };
 
-// ltl liveness { [] (car@signal_sent -> <> LaneController@green_turned) };
+// Всегда 
+ltl liveness { 
+    [] <> (lanes[0].color == green 
+        || lanes[1].color == green 
+        || lanes[2].color == green 
+        || lanes[3].color == green 
+        || lanes[4].color == green)
+ };
