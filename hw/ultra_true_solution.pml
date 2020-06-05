@@ -175,16 +175,6 @@ ltl safety {
 };
 
 ltl liveness {
-    [] (((lanes[0].s_received == true) -> <> (lanes[0].color == green)) &&
-        ((lanes[1].s_received == true) -> <> (lanes[1].color == green)) &&
-        ((lanes[2].s_received == true) -> <> (lanes[2].color == green)) &&
-        ((lanes[3].s_received == true) -> <> (lanes[3].color == green)) &&
-        ((lanes[4].s_received == true) -> <> (lanes[4].color == green)))
-};
-
-
-
-ltl fairness1 {
     [] ((((lanes[0].s_received == true) && (lanes[0].color == red)) -> <> (lanes[0].color == green)) &&
         (((lanes[1].s_received == true) && (lanes[1].color == red)) -> <> (lanes[1].color == green)) &&
         (((lanes[2].s_received == true) && (lanes[2].color == red)) -> <> (lanes[2].color == green)) &&
@@ -192,14 +182,10 @@ ltl fairness1 {
         (((lanes[4].s_received == true) && (lanes[4].color == red)) -> <> (lanes[4].color == green)))
 };
 
-ltl fairness2 {
+ltl fairness {
     !( [](lanes[0].color == green) ||
        [](lanes[1].color == green) ||
        [](lanes[2].color == green) ||
        [](lanes[3].color == green) ||
        [](lanes[4].color == green))
 };
-
-// #TODO ltl Сделать:
-// 1. Если он светофор красный то станет зеленым
-// 2. Никакой из сфетофоров не остается бесконечно зеленым
