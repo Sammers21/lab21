@@ -23,7 +23,7 @@ typedef Lane {
     // lenght of crosses array
     int crosses_len = 0;
     // channel for signals
-    chan signals = [1] of {byte};
+    chan signals = [0] of {byte};
 };
 
 // 0 - red
@@ -34,13 +34,15 @@ typedef Lane {
 Lane lanes[5];
 
 // LaneControllers send its number here
-chan LOCK_REQUEST = [1] of { byte }
+chan LOCK_REQUEST = [0] of { byte }
 // LaneControllers receive permission here
-chan LOCKED_BY_LANE[5] = [1] of { byte }
+chan LOCKED_BY_LANE[5] = [0] of { byte }
 // LaneControllers send its number here
-chan UNLOCK_REQUEST = [1] of { byte }
+chan UNLOCK_REQUEST = [0] of { byte }
 // LaneControllers receive permission here
-chan UNLOCKED_BY_LANE[5] = [1] of { byte }
+chan UNLOCKED_BY_LANE[5] = [0] of { byte }
+// Lane movement permissions
+chan MOVE_PERMISSIONS[5] = [0] of { byte }
 
 proctype LockManager(){
     do 
@@ -61,9 +63,9 @@ proctype LaneController(int lane_numb) {
     byte signal;
     printf("\nController on lane №%d has been started. Crossroads count:%d", lane_numb, lanes[lane_numb].crosses_len);
     do
-    :: (nempty(lanes[lane_numb].signals)) ->
+    ::
             int attempt = 0; 
-             signal_received: lanes[lane_numb].signals?signal;
+            signal_received: lanes[lane_numb].signals?signal;
             printf("\n[Controller №%d]: received a signal, trying to aquire all the resources", lane_numb);
             do
             ::  
@@ -73,8 +75,8 @@ proctype LaneController(int lane_numb) {
                 bool can_aquire = true;
                 int idx;
                 int cross;
-                LOCK_REQUEST ! lane_numb;
-                LOCKED_BY_LANE[lane_numb]?signal;
+                LOCK_REQUEST!lane_numb;
+                LOCKED_BY_LANE[lane_numb]?_;
                     // check if can aquire
                     for(idx: 0 .. lanes[lane_numb].crosses_len - 1){
                         cross = lanes[lane_numb].crosses[idx];
@@ -99,12 +101,12 @@ proctype LaneController(int lane_numb) {
                     printf("\n[Controller №%d]: could not aquire", lane_numb);
                     aquired = false;
                     fi
-                UNLOCK_REQUEST ! lane_numb;
+                UNLOCK_REQUEST!lane_numb;
                 UNLOCKED_BY_LANE[lane_numb]?signal;
                 if
                 :: aquired ->
-                    LOCK_REQUEST ! lane_numb;
-                    LOCKED_BY_LANE[lane_numb]?signal;
+                    LOCK_REQUEST!lane_numb;
+                    LOCKED_BY_LANE[lane_numb]?_;
                         printf("\n[Controller №%d]: releasing locks", lane_numb)
                         for(idx: 0 .. lanes[lane_numb].crosses_len - 1){
                             cross = lanes[lane_numb].crosses[idx];
@@ -112,8 +114,8 @@ proctype LaneController(int lane_numb) {
                             printf("\n[Controller №%d]: cross №:%d has been released", lane_numb, cross);
                         }
                     lanes[lane_numb].color = red;             
-                    UNLOCK_REQUEST ! lane_numb;
-                    UNLOCKED_BY_LANE[lane_numb]?signal;
+                    UNLOCK_REQUEST!lane_numb;
+                    UNLOCKED_BY_LANE[lane_numb]?_;
                     break;
                 :: else -> printf("\n[Controller №%d]: attempt to aquire one more time", lane_numb);
                 fi
@@ -123,17 +125,12 @@ proctype LaneController(int lane_numb) {
 
 
 proctype car(int car_num){
-    byte lane_to_move_on;
-    byte atmpt;
-    for(atmpt: 0 .. 100){
-        select (lane_to_move_on : 0 .. 4)
-        if
-        :: (len(lanes[lane_to_move_on].signals) == 0) ->
-           printf("\n[Car №%d]: moving on lane №%d", car_num, lane_to_move_on);
-           lanes[lane_to_move_on].signals ! 1;
-        :: else -> skip;
-        fi        
-    }
+    byte i;
+    byte rnd;
+    do
+    :: select(rnd: 0 .. 4);
+       lanes[rnd].signals ! 1;   
+    od
 }
 
 init {
@@ -168,17 +165,18 @@ init {
     run LaneController(3);
     run LaneController(4);
     // trafic generation
+    run car(0)
     run car(1)
 }
 
 
 ltl safety { 
-    [] !((lanes[0].color == green) && (lanes[2].color == green)) && // red and black
+    [] (!((lanes[0].color == green) && (lanes[2].color == green)) && // red and black
        !((lanes[0].color == green) && (lanes[1].color == green)) && // red and green
        !((lanes[0].color == green) && (lanes[4].color == green)) && // red and blue
        !((lanes[4].color == green) && (lanes[3].color == green)) && // blue and purle
        !((lanes[4].color == green) && (lanes[1].color == green)) && // blue and green
-       !((lanes[3].color == green) && (lanes[1].color == green)) // purle and green
+       !((lanes[3].color == green) && (lanes[1].color == green))) // purle and green
 };
 
-ltl liveness { [] (LaneController@signal_received -> <> LaneController@green_turned) };
+// ltl liveness { [] (car@signal_sent -> <> LaneController@green_turned) };
